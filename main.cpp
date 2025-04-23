@@ -59,14 +59,42 @@ static bool verifyTable(const etc1_to_dxt1_56_solution* a, const etc1_to_dxt1_56
  */
 static etc1_to_dxt1_56_solution result[32 * 8 * NUM_ETC1_TO_DXT1_SELECTOR_MAPPINGS * NUM_ETC1_TO_DXT1_SELECTOR_RANGES];
 
+
+#define DXT_COLORS_MAPPING 4096
+
+typedef struct
+{
+	uint32_t colors[4];
+	uint32_t lo;
+	uint32_t hi;
+} colors;
+colors dxt1_color_map[DXT_COLORS_MAPPING];
+
 /**
  * Function to optimise.
  */
 static void create_etc1_to_dxt1_6_conversion_table() {
 	uint32_t n = 0;
 
-	for (int inten = 0; inten < 8; inten++) {
-		for (uint32_t g = 0; g < 32; g++) {
+	int inten_max = 8;
+	uint32_t g_max = 32;
+
+	uint32_t index = 0;
+	
+	for (uint32_t hi = 0; hi <= 63; hi++) {
+		for (uint32_t lo = 0; lo <= 63; lo++) {
+			dxt1_color_map[index].lo = lo;
+			dxt1_color_map[index].hi = hi;
+			dxt1_color_map[index].colors[0] = (lo << 2) | (lo >> 4);
+			dxt1_color_map[index].colors[3] = (hi << 2) | (hi >> 4);
+			dxt1_color_map[index].colors[1] = (dxt1_color_map[index].colors[0] * 2 + dxt1_color_map[index].colors[3]) / 3;
+			dxt1_color_map[index].colors[2] = (dxt1_color_map[index].colors[3] * 2 + dxt1_color_map[index].colors[0]) / 3; 	
+			index++;
+		}
+	}
+
+	for (int inten = 0; inten < inten_max; inten++) {
+		for (uint32_t g = 0; g < g_max; g++) {
 			color32 block_colors[4];
 			decoder_etc_block::get_diff_subblock_colors(block_colors, decoder_etc_block::pack_color5(color32(g, g, g, 255), false), inten);
 
@@ -79,37 +107,28 @@ static void create_etc1_to_dxt1_6_conversion_table() {
 					uint32_t best_hi = 0;
 					uint32_t best_err = UINT32_MAX;
 
-					for (uint32_t hi = 0; hi <= 63; hi++) {
-						for (uint32_t lo = 0; lo <= 63; lo++) {
-							uint32_t colors[4];
+					for (uint32_t i = 0; i < DXT_COLORS_MAPPING; i++) {
+						uint32_t total_err = 0;
+			
+						for (uint32_t s = low_selector; s <= high_selector; s++) {
+							int err = block_colors[s].g - dxt1_color_map[i].colors[g_etc1_to_dxt1_selector_mappings[m][s]];
+							total_err += err * err;
+						}
 
-							colors[0] = (lo << 2) | (lo >> 4);
-							colors[3] = (hi << 2) | (hi >> 4);
-
-							colors[1] = (colors[0] * 2 + colors[3]) / 3;
-							colors[2] = (colors[3] * 2 + colors[0]) / 3;
-
-							uint32_t total_err = 0;
-
-							for (uint32_t s = low_selector; s <= high_selector; s++) {
-								int err = block_colors[s].g - colors[g_etc1_to_dxt1_selector_mappings[m][s]];
-
-								total_err += err * err;
-							}
-
-							if (total_err < best_err) {
-								best_err = total_err;
-								best_lo = lo;
-								best_hi = hi;
-							}
+						if (total_err < best_err) {
+							best_err = total_err;
+							best_lo = dxt1_color_map[i].lo;
+							best_hi = dxt1_color_map[i].hi;
 						}
 					}
+					
 
 					assert(best_err <= 0xFFFF);
 
 					result[n] = (etc1_to_dxt1_56_solution){ (uint8_t)best_lo, (uint8_t)best_hi, (uint16_t)best_err };
-
+					
 					n++;
+
 				} // m
 			} // sr
 		} // g
