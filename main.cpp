@@ -120,16 +120,17 @@ static void create_etc1_to_dxt1_6_conversion_table() {
 						for (uint32_t s = low_selector; s <= high_selector; s++) {
 							int err = block_colors[s].g - dxt1_color_map[i].colors[g_etc1_to_dxt1_selector_mappings[m][s]];
 							total_err += err * err;
+							if (total_err > best_err) {
+								break;
+							}
 						}
 
 						if (total_err < best_err) {
 							best_lo = dxt1_color_map[i].lo;
 							best_hi = dxt1_color_map[i].hi;
 							best_err = total_err;
-
 						}
 					}
-
 					assert(best_err != UINT32_MAX);
 
 					result[n] = (etc1_to_dxt1_56_solution){ (uint8_t)best_lo, (uint8_t)best_hi, (uint16_t)best_err };
