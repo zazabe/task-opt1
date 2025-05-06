@@ -1,3 +1,16 @@
+My Results:
+
+| Branch     | Machine             | OS             | CPU                | Compiler | Time                |
+|------------|---------------------|----------------|----------------- --|----------|---------------------|
+| main       |Ionico 15 M          | Arch Linux    | AMD Ryzen™ 7 8845HS | g++ (GCC)| 115ms               |
+| working    |Ionico 15 M          | Arch Linux    | AMD Ryzen™ 7 8845HS | g++ (GCC)| 68ms (check passed) |
+| experiment |Ionico 15 M          | Arch Linux    | AMD Ryzen™ 7 8845HS | g++ (GCC)| 69ms (check failed) |
+
+ Branches:
+
+- working: pre-caclulate dxt1 colors
+- experiment: check dxt1 colors by proximity, using a KDTree
+
 # Optimisation Task #1
 
 [![CMake desktop workflow](/../../actions/workflows/cmake-desktop.yml/badge.svg)](/../../actions/workflows/cmake-desktop.yml) [![CMake Emscripten workflow](/../../actions/workflows/cmake-emscripten.yml/badge.svg)](/../../actions/workflows/cmake-emscripten.yml)
@@ -20,17 +33,23 @@ These numbers should give you an idea of what to expect on different architectur
 ### Building
 
 For macOS/Linux build with:
+
 ```
 cc -Wall -Wextra -O3 -g0 main.cpp
 ```
+
 For Windows, in a Visual Studio Command Prompt, build with:
+
 ```
 cl /W3 /wd4576 /Ox main.cpp
 ```
+
 For Emscripten build with:
+
 ```
 emcc -Wall -Wextra -O3 -g0 -s SINGLE_FILE=1 main.cpp -o out.html
 ```
+
 Feel free to tweak the compiler flags, `-flto` or `/GL` for example, or target a specific CPU with `-mcpu=power9`, `/arch:AVX2`, etc., but both optimised and unoptimised runs should be compared with the same flags.
 
 (The Windows/MSVC warning `C4576` is for the initialiser list syntax.)
@@ -38,16 +57,21 @@ Feel free to tweak the compiler flags, `-flto` or `/GL` for example, or target a
 ### CMake
 
 Alternatively you can use CMake to perform command-line builds for macOS, Linux and Windows:
+
 ```
 cmake -B out -DCMAKE_BUILD_TYPE=Release
 cmake --build out --config Release
 ```
+
 And also Emscripten:
+
 ```
 emcmake cmake -B out -DCMAKE_BUILD_TYPE=Release
 cmake --build out --config Release
 ```
+
 Or generate a Visual Studio solution, for example:
+
 ```
 mkdir out
 cd out
@@ -58,6 +82,7 @@ task-opt1.sln
 ### Limits
 
 The following limits are imposed:
+
 1. Use a single thread. Whilst the code can be parallelised with ease, the task is to see what optimisations can be applied to the table generation.
 2. Generate the table. The ultimate unbeatable optimisation is to simply include the pre-generated table, but that defeats the task (BasisU's code already includes the pre-generated table).
 3. It must compile with Clang/GCC/MSVC. Again, an easy route would be compiling with [`ispc`](//ispc.github.io) or similar SPMD compilers, but this would also defeat the task. It _would_ be interesting to compare the results though.
