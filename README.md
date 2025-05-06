@@ -1,10 +1,10 @@
 My Results:
 
-| Branch     | Machine             | OS             | CPU                 | Compiler | Time                |
-|------------|---------------------|----------------|---------------------|----------|---------------------|
-| main       |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC)| 115ms               |
-| working    |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC)| 68ms (check passed) |
-| experiment |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC)| 69ms (check failed) |
+| Branch     | Machine             | OS             | CPU                 | Compiler        | Time                |
+|------------|---------------------|----------------|---------------------|-----------------|---------------------|
+| main       |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC) 15.1.1| 115ms               |
+| working    |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC) 15.1.1| 68ms (check passed) |
+| experiment |Ionico 15 M          | Arch Linux     | AMD Ryzen™ 7 8845HS | g++ (GCC) 15.1.1| 69ms (check failed) |
 
  Branches:
 
