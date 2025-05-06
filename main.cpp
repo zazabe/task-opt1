@@ -18,8 +18,6 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
-#include <map>
-#include <tuple>
 
 
 //************************** Helpers and Boilerplate **************************/
@@ -90,13 +88,6 @@ void prepare_dxt1_color_map() {
 }
 
 
-uint32_t combineArrayToUint32(const uint8_t* arr) {
-    uint32_t result = 0;
-    for (size_t i = 0; i < 4; ++i) {
-        result |= static_cast<uint32_t>(arr[i]) << (8 * (3 - i));
-    }
-    return result;
-}
 /**
  * Function to optimise.
  */
@@ -105,7 +96,6 @@ static void create_etc1_to_dxt1_6_conversion_table() {
 
 	int inten_max = 8;
 	uint32_t g_max = 32;
-	std::map<std::tuple<uint32_t, uint32_t>, std::tuple<uint8_t, uint8_t, uint16_t>> cache{};
 
 	for (int inten = 0; inten < inten_max; inten++) {
 
@@ -119,47 +109,30 @@ static void create_etc1_to_dxt1_6_conversion_table() {
 				const uint32_t high_selector = g_etc1_to_dxt1_selector_ranges[sr].m_high;
 
 				for (uint32_t m = 0; m < NUM_ETC1_TO_DXT1_SELECTOR_MAPPINGS; m++) {
-					uint8_t selectors[4] = {0};
-					uint8_t colors[4] = {0};
-					for (uint32_t s = low_selector; s <= high_selector; s++) {
-						selectors[s] = g_etc1_to_dxt1_selector_mappings[m][s];
-						colors[s] = block_colors[s].g;
-					}
 
-					uint32_t s_range = combineArrayToUint32(selectors);
-					uint32_t g_range = combineArrayToUint32(colors);
-					std::tuple<uint32_t, uint32_t> k = std::make_tuple(s_range, g_range);
+					uint32_t best_err = UINT32_MAX;
+					uint32_t best_lo;
+					uint32_t best_hi;
 
-					if(cache.count(k) == 0) {
-						uint32_t best_err = UINT32_MAX;
-						uint32_t best_lo;
-						uint32_t best_hi;
+					for (uint32_t i = 0; i < DXT_COLORS_MAPPING; i++) {
+						uint32_t total_err = 0;
 
-						for (uint32_t i = 0; i < DXT_COLORS_MAPPING; i++) {
-							uint32_t total_err = 0;
-
-							for (uint32_t s = low_selector; s <= high_selector; s++) {
-								int err = block_colors[s].g - dxt1_color_map[i].colors[g_etc1_to_dxt1_selector_mappings[m][s]];
-								total_err += err * err;
-							}
-
-							if (total_err < best_err) {
-								best_lo = dxt1_color_map[i].lo;
-								best_hi = dxt1_color_map[i].hi;
-								best_err = total_err;
-
-							}
+						for (uint32_t s = low_selector; s <= high_selector; s++) {
+							int err = block_colors[s].g - dxt1_color_map[i].colors[g_etc1_to_dxt1_selector_mappings[m][s]];
+							total_err += err * err;
 						}
 
-						cache[k] = std::make_tuple((uint8_t)best_lo, (uint8_t)best_hi, (uint16_t)best_err);
-						assert(best_err != UINT32_MAX);
+						if (total_err < best_err) {
+							best_lo = dxt1_color_map[i].lo;
+							best_hi = dxt1_color_map[i].hi;
+							best_err = total_err;
+
+						}
 					}
 
-					uint8_t best_lo;
-					uint8_t best_hi;
-					uint16_t best_err;
-					std::tie(best_lo, best_hi, best_err) = cache[k];
-					result[n] = (etc1_to_dxt1_56_solution){ best_lo, best_hi, best_err };
+					assert(best_err != UINT32_MAX);
+
+					result[n] = (etc1_to_dxt1_56_solution){ (uint8_t)best_lo, (uint8_t)best_hi, (uint16_t)best_err };
 
 					n++;
 
